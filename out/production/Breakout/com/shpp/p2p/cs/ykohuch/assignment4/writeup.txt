@@ -1,0 +1,20 @@
+1.Використані змінні поля:
+
+private double newX;
+private double newY;
+для використання в методі mouseMoved, через те, що з локальними змінними мені не вдалося запустити його, через те,що цей метод вже приймав GOvbject ball.
+
+counter
+Змінна кількості блоків. для використання в різних методах
+
+private GRect brick
+при створенні блоків
+
+private double vx;
+private double vy;
+для використання в методі moveBall, через те,що цей метод вже приймав GOvbject ball.
+
+ private GObject movedPaddle = theBoard();
+ для використання в методі moveBall і MouseMoved.
+
+ 2.Для підрахунку блоків є змінна-лічильник, яка мінусується кожного разу, коли м'яч доторкається не до платформи
