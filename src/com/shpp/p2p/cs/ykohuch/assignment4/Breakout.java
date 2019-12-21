@@ -3,6 +3,7 @@ package com.shpp.p2p.cs.ykohuch.assignment4;
 import acm.graphics.*;
 import acm.util.RandomGenerator;
 import com.shpp.cs.a.graphics.WindowProgram;
+import com.sun.istack.internal.Nullable;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -52,21 +53,21 @@ public class Breakout extends WindowProgram {
     private static final int NTURNS = 3;
 
     public void run() {
+        //create blocks and display them
+        makeBricks(getWidth() / 2, BRICK_Y_OFFSET);
+        //display paddle on the screen
+        add(theBoard());
+        // paddle movement physics
+        addMouseListeners();
+
+
+
         for(int i=0; i < NTURNS; i++) {
-            //create blocks and display them
-            makeBricks(getWidth() / 2, BRICK_Y_OFFSET);
-
-            //display paddle on the screen
-            add(theBoard());
-            // paddle movement physics
-            addMouseListeners();
-
             //display ball on the screen
             GOval ball = makeBall();
             add(ball);
-
             //ball motion physics
-            getBallVelocity(ball);
+            getBallVelocity();
             //a method in which the written motion of the ball
             moveBall(ball);
             //paddle collision processing
@@ -78,7 +79,7 @@ public class Breakout extends WindowProgram {
                 break;
             }
             if (counter > 0) {
-                removeAll();
+                remove(ball);
             }
         }
         if (counter > 0) {
@@ -105,7 +106,7 @@ public class Breakout extends WindowProgram {
     @Override
     public void mouseMoved(MouseEvent e) {
             movedPaddle = getElementAt(movedPaddle.getX(), movedPaddle.getY());
-            newX = e.getX() - theBoard().getWidth() / 2.0;
+            newX = e.getX() - movedPaddle.getWidth() / 2.0;
             newY = HEIGHT - (PADDLE_Y_OFFSET + PADDLE_HEIGHT);
             movedPaddle.setLocation(newX, newY);
 
@@ -122,7 +123,7 @@ public class Breakout extends WindowProgram {
 
     //here we create a ball
     private GOval makeBall(){
-        GOval ball = new GOval(WIDTH/2-BALL_RADIUS/2, HEIGHT/2-BALL_RADIUS/2, BALL_RADIUS, BALL_RADIUS);
+        GOval ball = new GOval(WIDTH/2-BALL_RADIUS/2, HEIGHT/2-BALL_RADIUS/2, BALL_RADIUS*2, BALL_RADIUS*2);
         ball.setFillColor(Color.BLACK);
         ball.setFilled(true);
         return (ball);
@@ -133,7 +134,7 @@ public class Breakout extends WindowProgram {
     private double vy;
 
     //ball motion physics
-    private void getBallVelocity(GOval ball) {
+    private void getBallVelocity() {
         RandomGenerator rgen = RandomGenerator.getInstance();
         vy = +3.0;
         vx = rgen.nextDouble(1.0, 3.0);
@@ -145,6 +146,7 @@ public class Breakout extends WindowProgram {
 
         //a method in which the written motion of the ball
     private void moveBall(GOval ball) {
+        waitForClick();
        while(true) {
            ball.move(vx, vy);
 
@@ -157,21 +159,23 @@ public class Breakout extends WindowProgram {
            if ((ball.getY() - vy <= 0 && vy < 0 )) {
                vy = -vy;
            }
+
             GObject collider = getCollidingObject(ball);
            //here is the functionality of a collision ball with a paddle
            if (collider == movedPaddle) {
-               vy = -Math.abs(vy);
+               vy = -vy;
 				/* if ball hits edge of paddle on side from which ball is coming, also bounce x */
                    //right  side of paddle
                if (((movedPaddle.getX() + BALL_RADIUS) - (movedPaddle.getX() + PADDLE_WIDTH / 2)) > PADDLE_WIDTH / 4) {
-                   vx = Math.abs(vx);
+                   vx = +vx;
                    //left  side of paddle
                } else if (((movedPaddle.getX() + BALL_RADIUS) - (movedPaddle.getX() + PADDLE_WIDTH / 2)) < -PADDLE_WIDTH / 4) {
-                   vx = -Math.abs(vx);
+                   vx = -vx;
                }
                // ball hit a brick from below
+
            } else if (collider != null) {
-               vy = Math.abs(vy);
+               vy = -vy;
                counter--;
                remove(collider);
            }
@@ -179,11 +183,14 @@ public class Breakout extends WindowProgram {
            if (ball.getY() >= getHeight()) {
                break;
            }
+           //protection against "sticking" of the ball
+           if(ball.getY() >= movedPaddle.getY()){
+               break;
+           }
            if(counter == 0) {
                break;
            }
        }
-
     }
 
     //paddle collision processing
@@ -241,16 +248,20 @@ public class Breakout extends WindowProgram {
     }
 
     private void congratulations() {
-        GLabel Winner = new GLabel ("Winner!!", getWidth()/2, getHeight()/2);
+        setBackground(Color.YELLOW);
+        GLabel Winner = new GLabel ("Winner!!!", getWidth()/2, getHeight()/2);
         Winner.move(-Winner.getWidth()/2, -Winner.getHeight());
-        Winner.setColor(Color.BLACK);
+        Winner.setFont("Sans-40");
+        Winner.setColor(Color.BLUE);
         add (Winner);
     }
 
     private void gameOver() {
+        setBackground(Color.BLUE);
         GLabel gameOver = new GLabel ("Game Over", getWidth()/2, getHeight()/2);
+        gameOver.setFont("Sans-40");
         gameOver.move(-gameOver.getWidth()/2, -gameOver.getHeight());
-        gameOver.setColor(Color.RED);
+        gameOver.setColor(Color.WHITE);
         add (gameOver);
     }
 }
