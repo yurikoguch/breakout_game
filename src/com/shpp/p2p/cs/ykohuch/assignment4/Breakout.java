@@ -3,11 +3,12 @@ package com.shpp.p2p.cs.ykohuch.assignment4;
 import acm.graphics.*;
 import acm.util.RandomGenerator;
 import com.shpp.cs.a.graphics.WindowProgram;
-import com.sun.istack.internal.Nullable;
+
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
+/**classic arcade game Breakout*/
 public class Breakout extends WindowProgram {
     /** Width and height of application window in pixels */
     public static final int APPLICATION_WIDTH = 400;
@@ -52,6 +53,7 @@ public class Breakout extends WindowProgram {
     /** Number of turns */
     private static final int NTURNS = 3;
 
+    /*basic method*/
     public void run() {
         //create blocks and display them
         makeBricks(getWidth() / 2, BRICK_Y_OFFSET);
@@ -59,8 +61,6 @@ public class Breakout extends WindowProgram {
         add(theBoard());
         // paddle movement physics
         addMouseListeners();
-
-
 
         for(int i=0; i < NTURNS; i++) {
             //display ball on the screen
@@ -70,9 +70,8 @@ public class Breakout extends WindowProgram {
             getBallVelocity();
             //a method in which the written motion of the ball
             moveBall(ball);
-            //paddle collision processing
+            // ball collision processing
             getCollidingObject(ball);
-
             if (counter == 0) {
                 ball.setVisible(false);
                 congratulations();
@@ -87,8 +86,7 @@ public class Breakout extends WindowProgram {
         }
     }
 
-
-    //here we create a paddle from which the ball will be reflected
+    //here method create a paddle from which the ball will be reflected
     private GObject theBoard() {
         GRect theBoard = new GRect(WIDTH/2-PADDLE_WIDTH/2, HEIGHT-(PADDLE_Y_OFFSET+PADDLE_HEIGHT), PADDLE_WIDTH, PADDLE_HEIGHT);
         theBoard.setFillColor(Color.BLACK);
@@ -99,17 +97,14 @@ public class Breakout extends WindowProgram {
 
     // a global variable for the mouseMoved method
     private GObject movedPaddle = theBoard();
-    private double newX;
-    private double newY;
 
     //method that binds the mouse to the theBoard object
     @Override
     public void mouseMoved(MouseEvent e) {
-            movedPaddle = getElementAt(movedPaddle.getX(), movedPaddle.getY());
-            newX = e.getX() - movedPaddle.getWidth() / 2.0;
-            newY = HEIGHT - (PADDLE_Y_OFFSET + PADDLE_HEIGHT);
-            movedPaddle.setLocation(newX, newY);
-
+        movedPaddle = getElementAt(movedPaddle.getX(), movedPaddle.getY());
+        double newX = e.getX() - movedPaddle.getWidth() / 2;
+        double newY = getHeight() - PADDLE_Y_OFFSET - PADDLE_HEIGHT;
+        movedPaddle.setLocation(newX, newY);
             // restrictions on the movement of the paddle that it did not go beyond GCanvas
             if (e.getX() < PADDLE_WIDTH / 2) {
                 newX = PADDLE_WIDTH / 2;
@@ -121,7 +116,7 @@ public class Breakout extends WindowProgram {
             this.movedPaddle.setLocation((newX - PADDLE_WIDTH / 2), newY);
     }
 
-    //here we create a ball
+    /*method for create a ball*/
     private GOval makeBall(){
         GOval ball = new GOval(WIDTH/2-BALL_RADIUS/2, HEIGHT/2-BALL_RADIUS/2, BALL_RADIUS*2, BALL_RADIUS*2);
         ball.setFillColor(Color.BLACK);
@@ -142,15 +137,12 @@ public class Breakout extends WindowProgram {
             vx = -vx;
     }
 
-
-
         //a method in which the written motion of the ball
     private void moveBall(GOval ball) {
         waitForClick();
-       while(true) {
+       while(counter > 0) {
            ball.move(vx, vy);
-
-           // restrictions on the movement of the ball that it did not go beyond GCanvas
+           // restrictions on the movement of the ball that it did not go beyond screen
            if ((ball.getX() - vx <= 0 && vx < 0 )|| (ball.getX() + vx >= (getWidth() - BALL_RADIUS*2) && vx>0)) {
                vx = -vx;
            }
@@ -159,7 +151,6 @@ public class Breakout extends WindowProgram {
            if ((ball.getY() - vy <= 0 && vy < 0 )) {
                vy = -vy;
            }
-
             GObject collider = getCollidingObject(ball);
            //here is the functionality of a collision ball with a paddle
            if (collider == movedPaddle) {
@@ -168,13 +159,14 @@ public class Breakout extends WindowProgram {
                    //right  side of paddle
                if (((movedPaddle.getX() + BALL_RADIUS) - (movedPaddle.getX() + PADDLE_WIDTH / 2)) > PADDLE_WIDTH / 4) {
                    vx = +vx;
-                   //left  side of paddle
-               } else if (((movedPaddle.getX() + BALL_RADIUS) - (movedPaddle.getX() + PADDLE_WIDTH / 2)) < -PADDLE_WIDTH / 4) {
+               }
+               //left  side of paddle
+                if (((movedPaddle.getX() + BALL_RADIUS) - (movedPaddle.getX() + PADDLE_WIDTH / 2)) < -PADDLE_WIDTH / 4) {
                    vx = -vx;
                }
-               // ball hit a brick from below
-
-           } else if (collider != null) {
+           }
+           // ball hit a brick from below
+           else if (collider != null) {
                vy = -vy;
                counter--;
                remove(collider);
@@ -183,54 +175,45 @@ public class Breakout extends WindowProgram {
            if (ball.getY() >= getHeight()) {
                break;
            }
-           //protection against "sticking" of the ball
-           if(ball.getY() >= movedPaddle.getY()){
-               break;
-           }
            if(counter == 0) {
                break;
            }
        }
     }
 
-    //paddle collision processing
+    //ball collision processing an find contact with other elements in screen
     private GObject getCollidingObject(GObject ball) {
-        if((getElementAt(ball.getX(), ball.getY())) != null) {
-            return getElementAt(ball.getX(), ball.getY());
-        }
-        else if (getElementAt( (ball.getX() + BALL_RADIUS*2), ball.getY()) != null ){
-            return getElementAt(ball.getX() + BALL_RADIUS*2, ball.getY());
-        }
-        else if(getElementAt(ball.getX(), (ball.getY() + BALL_RADIUS*2)) != null ){
-            return getElementAt(ball.getX(), ball.getY() + BALL_RADIUS*2);
-        }
-        else if(getElementAt((ball.getX() + BALL_RADIUS*2), (ball.getY() + BALL_RADIUS*2)) != null ){
-            return getElementAt(ball.getX() + BALL_RADIUS*2, ball.getY() + BALL_RADIUS*2);
-        }
+            if ((getElementAt(ball.getX(), ball.getY())) != null) {
+                return getElementAt(ball.getX(), ball.getY());
+            }
+            if (getElementAt((ball.getX() + BALL_RADIUS * 2), ball.getY()) != null) {
+                return getElementAt(ball.getX() + BALL_RADIUS * 2, ball.getY());
+            }
+            if (getElementAt(ball.getX(), (ball.getY() + BALL_RADIUS * 2)) != null) {
+                return getElementAt(ball.getX(), ball.getY() + BALL_RADIUS * 2);
+            }
+            if (getElementAt((ball.getX() + BALL_RADIUS * 2), (ball.getY() + BALL_RADIUS * 2)) != null) {
+                return getElementAt(ball.getX() + BALL_RADIUS * 2, ball.getY() + BALL_RADIUS * 2);
+            }
         //need to return null if there are no objects present
         else{
             return null;
         }
     }
 
-    //creating a bricks
-    private GRect brick;
     //total number of bricks
-    private int counter = 100;
+    private int counter = NBRICKS_PER_ROW * NBRICK_ROWS;
 
+    /*the method creates lines of blocks and paints them into the required colors*/
     private void makeBricks(double dx, double dy) {
         for( int row = 0; row < NBRICK_ROWS; row++ ) {
-
             for (int column = 0; column < NBRICKS_PER_ROW; column++) {
-
                 //set location for bricks
                  double x = dx - (NBRICKS_PER_ROW*BRICK_WIDTH)/2 - ((NBRICKS_PER_ROW-1)*BRICK_SEP)/2 + column*BRICK_WIDTH + column*BRICK_SEP;
                  double y = dy + row*BRICK_HEIGHT + row*BRICK_SEP;
-
-                brick = new GRect( x , y , BRICK_WIDTH , BRICK_HEIGHT );
+                GRect brick = new GRect(x, y, BRICK_WIDTH, BRICK_HEIGHT);
                 add (brick);
                 brick.setFilled(true);
-
                 //set colour for different rows of bricks
                 if (row < 2) {
                     brick.setColor(Color.RED);
@@ -247,6 +230,7 @@ public class Breakout extends WindowProgram {
         }
     }
 
+   /* method displays greetings to the winner*/
     private void congratulations() {
         setBackground(Color.YELLOW);
         GLabel Winner = new GLabel ("Winner!!!", getWidth()/2, getHeight()/2);
@@ -256,6 +240,7 @@ public class Breakout extends WindowProgram {
         add (Winner);
     }
 
+   /* the method outputs a message about the loss*/
     private void gameOver() {
         setBackground(Color.BLUE);
         GLabel gameOver = new GLabel ("Game Over", getWidth()/2, getHeight()/2);
