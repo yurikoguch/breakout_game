@@ -34,6 +34,9 @@ public class Breakout extends WindowProgram {
     /** Separation between bricks */
     private static final int BRICK_SEP = 4;
 
+    /** Ball velocity */
+    private static final double BALL_VELOCITY_Y = +3.0;
+
     /** Width of a brick */
     private static final int BRICK_WIDTH =
             (WIDTH - (NBRICKS_PER_ROW - 1) * BRICK_SEP) / NBRICKS_PER_ROW;
@@ -53,6 +56,9 @@ public class Breakout extends WindowProgram {
     /** Number of turns */
     private static final int NTURNS = 3;
 
+    /** which is used to display the try number stored in a variable tries*/
+    private static GLabel OTPUT_ATTEMPTS;
+
     /*basic method*/
     public void run() {
         //create blocks and display them
@@ -66,20 +72,22 @@ public class Breakout extends WindowProgram {
             //display ball on the screen
             GOval ball = makeBall();
             add(ball);
+            printNumberOfAttempts();
             //ball motion physics
             getBallVelocity();
-            //a method in which the written motion of the ball
-            moveBall(ball);
-            // ball collision processing
-            getCollidingObject(ball);
-            if (counter == 0) {
-                ball.setVisible(false);
-                congratulations();
-                break;
-            }
-            if (counter > 0) {
-                remove(ball);
-            }
+                //a method in which the written motion of the ball
+                moveBall(ball);
+                // ball collision processing
+                getCollidingObject(ball);
+                if (counter == 0) {
+                    ball.setVisible(false);
+                    congratulations();
+                    break;
+                }
+                if (counter > 0) {
+                    remove(ball);
+                    remove(OTPUT_ATTEMPTS);
+                }
         }
         if (counter > 0) {
             gameOver();
@@ -97,23 +105,26 @@ public class Breakout extends WindowProgram {
 
     // a global variable for the mouseMoved method
     private GObject movedPaddle = theBoard();
+    //number of tries for output at the screen
+    private int tries = 1;
 
     //method that binds the mouse to the theBoard object
     @Override
     public void mouseMoved(MouseEvent e) {
         movedPaddle = getElementAt(movedPaddle.getX(), movedPaddle.getY());
-        double newX = e.getX() - movedPaddle.getWidth() / 2;
-        double newY = getHeight() - PADDLE_Y_OFFSET - PADDLE_HEIGHT;
-        movedPaddle.setLocation(newX, newY);
+            double newX = e.getX() - movedPaddle.getWidth() - PADDLE_WIDTH/ 2.0;
+            double newY = getHeight() - PADDLE_Y_OFFSET - PADDLE_HEIGHT;
+            movedPaddle.setLocation(newX, newY);
             // restrictions on the movement of the paddle that it did not go beyond GCanvas
-            if (e.getX() < PADDLE_WIDTH / 2) {
-                newX = PADDLE_WIDTH / 2;
-            } else if (e.getX() > (APPLICATION_WIDTH - PADDLE_WIDTH / 2)) {
-                newX = APPLICATION_WIDTH - PADDLE_WIDTH / 2;
-            } else {
+            if (e.getX() < PADDLE_WIDTH / 2.0) {
+               newX = PADDLE_WIDTH / 2.0;
+            } else if (e.getX() > (APPLICATION_WIDTH - PADDLE_WIDTH / 2.0)) {
+                newX = APPLICATION_WIDTH - PADDLE_WIDTH / 2.0;
+            }
+            else {
                 newX = e.getX();
             }
-            this.movedPaddle.setLocation((newX - PADDLE_WIDTH / 2), newY);
+            this.movedPaddle.setLocation((newX - PADDLE_WIDTH / 2.0), newY);
     }
 
     /*method for create a ball*/
@@ -131,7 +142,7 @@ public class Breakout extends WindowProgram {
     //ball motion physics
     private void getBallVelocity() {
         RandomGenerator rgen = RandomGenerator.getInstance();
-        vy = +3.0;
+        vy = BALL_VELOCITY_Y;
         vx = rgen.nextDouble(1.0, 3.0);
         if (rgen.nextBoolean(0.5))
             vx = -vx;
@@ -153,17 +164,22 @@ public class Breakout extends WindowProgram {
            }
             GObject collider = getCollidingObject(ball);
            //here is the functionality of a collision ball with a paddle
-           if (collider == movedPaddle) {
-               vy = -vy;
-				/* if ball hits edge of paddle on side from which ball is coming, also bounce x */
-                   //right  side of paddle
-               if (((movedPaddle.getX() + BALL_RADIUS) - (movedPaddle.getX() + PADDLE_WIDTH / 2)) > PADDLE_WIDTH / 4) {
-                   vx = +vx;
+           if (collider == movedPaddle && vy > 0) {
+               /*here ball bounces from the top side of paddle*/
+               if (ball.getY() >= getHeight() - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS * 2 ||
+                       ball.getY() < getHeight() - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS * 2) {
+                   vy = -vy;
                }
-               //left  side of paddle
-                if (((movedPaddle.getX() + BALL_RADIUS) - (movedPaddle.getX() + PADDLE_WIDTH / 2)) < -PADDLE_WIDTH / 4) {
-                   vx = -vx;
+               /*protection from being stuck in the board if it hits the side */
+               if (ball.getY() + BALL_RADIUS * 2 > movedPaddle.getY()) {
+                   remove(ball);
+                   tries ++;
+                   break;
                }
+           }
+           /*if ball will contact with label, he will not bounce*/
+           else if(collider == OTPUT_ATTEMPTS){
+               ball.move(vx,vy);
            }
            // ball hit a brick from below
            else if (collider != null) {
@@ -173,6 +189,7 @@ public class Breakout extends WindowProgram {
            }
            pause(DELAY);
            if (ball.getY() >= getHeight()) {
+               tries ++;
                break;
            }
            if(counter == 0) {
@@ -201,7 +218,7 @@ public class Breakout extends WindowProgram {
         }
     }
 
-    //total number of bricks
+    //counter which contains total number of bricks
     private int counter = NBRICKS_PER_ROW * NBRICK_ROWS;
 
     /*the method creates lines of blocks and paints them into the required colors*/
@@ -209,7 +226,8 @@ public class Breakout extends WindowProgram {
         for( int row = 0; row < NBRICK_ROWS; row++ ) {
             for (int column = 0; column < NBRICKS_PER_ROW; column++) {
                 //set location for bricks
-                 double x = dx - (NBRICKS_PER_ROW*BRICK_WIDTH)/2 - ((NBRICKS_PER_ROW-1)*BRICK_SEP)/2 + column*BRICK_WIDTH + column*BRICK_SEP;
+                 double x = dx - (NBRICKS_PER_ROW*BRICK_WIDTH)/2 -
+                         ((NBRICKS_PER_ROW-1)*BRICK_SEP)/2 + column*BRICK_WIDTH + column*BRICK_SEP;
                  double y = dy + row*BRICK_HEIGHT + row*BRICK_SEP;
                 GRect brick = new GRect(x, y, BRICK_WIDTH, BRICK_HEIGHT);
                 add (brick);
@@ -230,11 +248,19 @@ public class Breakout extends WindowProgram {
         }
     }
 
+    /*method which used to draw Glabel with attempts*/
+    private void printNumberOfAttempts() {
+        OTPUT_ATTEMPTS = new GLabel("Attempt number: " + tries);
+        OTPUT_ATTEMPTS.setFont("Sans-20");
+        OTPUT_ATTEMPTS.setColor(Color.black);
+        add(OTPUT_ATTEMPTS, getWidth()/2, OTPUT_ATTEMPTS.getAscent());
+    }
+
    /* method displays greetings to the winner*/
     private void congratulations() {
         setBackground(Color.YELLOW);
         GLabel Winner = new GLabel ("Winner!!!", getWidth()/2, getHeight()/2);
-        Winner.move(-Winner.getWidth()/2, -Winner.getHeight());
+        Winner.move(-Winner.getWidth()*2, -Winner.getHeight());
         Winner.setFont("Sans-40");
         Winner.setColor(Color.BLUE);
         add (Winner);
